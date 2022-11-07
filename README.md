@@ -34,7 +34,55 @@ The service takes JSON data as input in the format
 }
 ```
 
-And returns the rendered reports.
+And returns the rendered reports with the following structure:
+
+```
+{
+    "clusters": ["5d5892d3-1f74-4ccf-91af-548dfc9767aa"],
+    "reports": {
+        "5d5892d3-1f74-4ccf-91af-548dfc9767aa": [
+            {
+                "rule_id": "ccx_rules_ocp.external.rules.nodes_requirements_check",
+                "error_key": "NODES_MINIMUM_REQUIREMENTS_NOT_MET",
+                "resolution": "Rendered resolution",
+                "description": "Rendered description",
+                "reason": "Rendered reason"
+            }
+        ]
+    }
+}
+```
+
+### [POST] /v2/rendered-reports
+
+The service takes JSON data as input in the format
+
+```
+{
+	"content": ... data from content service endpoint /content ...
+	"report-data": ... data from aggregator service endpoint /clusters/{clusterIds}/reports ...
+}
+```
+
+And returns the rendered reports with the following structure:
+
+```
+{
+    "clusters": ["5d5892d3-1f74-4ccf-91af-548dfc9767aa"],
+    "reports": {
+        "5d5892d3-1f74-4ccf-91af-548dfc9767aa": {
+            "nodes_requirements_check|NODES_MINIMUM_REQUIREMENTS_NOT_MET": {
+                "rule_id": "ccx_rules_ocp.external.rules.nodes_requirements_check",
+                "error_key": "NODES_MINIMUM_REQUIREMENTS_NOT_MET",
+                "resolution": "Rendered resolution",
+                "description": "Rendered description",
+                "reason": "Rendered reason"
+            }
+        }
+    }
+}
+```
+
 
 ### [GET] /docs
 
