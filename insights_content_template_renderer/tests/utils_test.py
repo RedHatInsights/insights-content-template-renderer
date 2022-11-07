@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import pytest
 from insights_content_template_renderer import utils
+from copy import deepcopy
 
 test_data = {}
 test_data_path = Path(__file__).with_name("request_data_example.json")
@@ -163,10 +164,11 @@ def test_render_report_missing_rule_content():
         utils.render_report(content, report)
 
 
-def test_render_reports():
+def test_render_reports_v1():
     """
     Checks that render_reports() function renders all reports correctly.
     """
+    data = deepcopy(test_data)
     result = {
         'clusters': [
             '5d5892d3-1f74-4ccf-91af-548dfc9767aa'
@@ -204,47 +206,146 @@ def test_render_reports():
             ]
         }
     }
-    rendered = utils.render_reports(test_data)
+    rendered = utils.render_reports_v1(data)
     assert rendered == result
 
 
-def test_render_reports_missing_content():
+def test_render_reports_v1_missing_content():
     """
     Checks that render_reports() function raises exception if the content data are missing.
     """
-    data = test_data.copy()
+    data = deepcopy(test_data)
     del data["content"]
     with pytest.raises(ValueError):
-        utils.render_reports(data)
+        utils.render_reports_v1(data)
 
 
-def test_render_reports_missing_report_data():
+def test_render_reports_v1_missing_report_data():
     """
     Checks that render_reports() function raises exception if the report data are missing.
     """
-    data = test_data.copy()
+    data = deepcopy(test_data)
     del data["report_data"]
     with pytest.raises(ValueError):
-        utils.render_reports(data)
+        utils.render_reports_v1(data)
 
 
-def test_render_reports_missing_clusters():
+def test_render_reports_v1_missing_clusters():
     """
     Checks that render_reports() function raises exception
     if the data for reported clusters are missing.
     """
-    data = test_data.copy()
+    data = deepcopy(test_data)
     del data["report_data"]["clusters"]
     with pytest.raises(ValueError):
-        utils.render_reports(data)
+        utils.render_reports_v1(data)
 
 
-def test_render_reports_missing_reports():
+def test_render_reports_v1_missing_reports():
     """
     Checks that render_reports() function raises exception
     if the data for individual reports are missing.
     """
-    data = test_data.copy()
+    data = deepcopy(test_data)
+    print(test_data["report_data"])
     del data["report_data"]["reports"]
     with pytest.raises(ValueError):
-        utils.render_reports(data)
+        utils.render_reports_v1(data)
+    print(test_data["report_data"])
+
+
+
+def test_render_reports_v2():
+    """
+    Checks that render_reports() function renders all reports correctly.
+    """
+    data = deepcopy(test_data)
+    result = {
+        'clusters': [
+            '5d5892d3-1f74-4ccf-91af-548dfc9767aa'
+        ],
+        'reports': {
+            '5d5892d3-1f74-4ccf-91af-548dfc9767aa': {
+                'nodes_requirements_check|NODES_MINIMUM_REQUIREMENTS_NOT_MET': {
+                    'rule_id': 'ccx_rules_ocp.external.rules.nodes_requirements_check',
+                    'error_key': 'NODES_MINIMUM_REQUIREMENTS_NOT_MET',
+                    'resolution': "Red Hat recommends that you configure your nodes to meet the minimum resource requirements.\n\nMake sure that:\n\n\n1. Node foo1 (undefined)\n   * Has enough memory, minimum requirement is 16. Currently its only configured with 8.16GB.\n",
+                    'reason': "Node not meeting the minimum requirements:\n\n1. foo1\n  * Roles: undefined\n  * Minimum memory requirement is 16, but the node is configured with 8.16.\n",
+                    'description': "An OCP node foo1 behaves unexpectedly when it doesn't meet the minimum resource requirements"
+                },
+                'samples_op_failed_image_import_check|SAMPLES_FAILED_IMAGE_IMPORT_ERR': {
+                    'rule_id': 'ccx_rules_ocp.external.rules.nodes_requirements_check',
+                    'error_key': 'NODES_MINIMUM_REQUIREMENTS_NOT_MET',
+                    'resolution': "Red Hat recommends that you configure your nodes to meet the minimum resource requirements.\n\nMake sure that:\n\n\n1. Node foo1 (undefined)\n   * Has enough memory, minimum requirement is 16. Currently its only configured with 8.16GB.\n",
+                    'reason': "Node not meeting the minimum requirements:\n\n1. foo1\n  * Roles: undefined\n  * Minimum memory requirement is 16, but the node is configured with 8.16.\n",
+                    'description': "An OCP node foo1 behaves unexpectedly when it doesn't meet the minimum resource requirements"
+                },
+                'samples_op_failed_image_import_check|SAMPLES_FAILED_IMAGE_IMPORT_ERR': {
+                    'rule_id': 'ccx_rules_ocp.external.rules.samples_op_failed_image_import_check',
+                    'error_key': 'SAMPLES_FAILED_IMAGE_IMPORT_ERR',
+                    'resolution': "Red Hat recommends that you to follow these steps:\n\n1. Fix 1, Try running:\n~~~\n# oc import-image <for the ImageStream(s) in question>\n~~~\n\n1. Fix 2, Try running:\n~~~\n# oc delete configs.samples cluster\n~~~",
+                    'reason': "Due to a temporary hiccup talking to the Red Hat registry the openshift-samples failed to import some of the imagestreams.\n\n\nSource of the issue:\n\n**Cluster-operator:**  **openshift-samples**\n- *Condition:* Degraded\n- *Reason:* FailedImageImports\n- *Message:* Samples installed at 4.2.0, with image import failures for these imagestreams: php \n- *Last* Transition: 2020-03-19T08:32:53Z\n",
+                    'description': "Pods could fail to start if openshift-samples is degraded due to FailedImageImport which is caused by a hiccup while talking to the Red Hat registry"
+                },
+                'namespaces_with_overlapping_uid_ranges|NAMESPACES_WITH_OVERLAPPING_UID_RANGES': {
+                    'rule_id': 'ccx_rules_ocp.external.rules.namespaces_with_overlapping_uid_ranges',
+                    'error_key': 'NAMESPACES_WITH_OVERLAPPING_UID_RANGES',
+                    'resolution': 'Red Hat recommends that you resolve the issue by following the steps in the [Knowledgebase Article](https://access.redhat.com/articles/6844071).',
+                    'description': 'Namespaces with collision UID ranges do not meet the compliance requirements with many industry standards',
+                    'reason': 'The following namespaces are detected to have collision UID ranges. Namespaces with collision UID ranges do not meet the compliance requirements with many industry standards. In some serious situations, it could lead to data exposure.\n\n\n- Namespaces: \n**openshift**, \n**test-1**, \n**test-2**, \n\n- Namespaces: \n**openshift-ingress-canary**, \n**test-3**, \n\n- Namespaces: \n**test-4**, \n**test-5**, \n**test-6**, \n'
+                },
+                'cluster_wide_proxy_auth_check|AUTH_OPERATOR_PROXY_ERROR': {
+                    'rule_id': 'ccx_rules_ocp.external.rules.cluster_wide_proxy_auth_check',
+                    'error_key': 'AUTH_OPERATOR_PROXY_ERROR',
+                    'resolution': "Red Hat recommends that you to follow steps in the KCS article.\n * [Authentication operator Degraded with Reason `WellKnownEndpointDegradedError`](https://access.redhat.com/solutions/4569191)\n",
+                    'reason': "Requests to routes and/or the public API endpoint are not being proxied to the cluster.\n",
+                    'description': "The authentication operator is degraded when cluster is configured to use a cluster-wide proxy"
+                }
+            }
+        }
+    }
+    rendered = utils.render_reports_v2(data)
+    assert rendered == result
+
+
+def test_render_reports_v2_missing_content():
+    """
+    Checks that render_reports() function raises exception if the content data are missing.
+    """
+    data = deepcopy(test_data)
+    del data["content"]
+    with pytest.raises(ValueError):
+        utils.render_reports_v2(data)
+
+
+def test_render_reports_v2_missing_report_data():
+    """
+    Checks that render_reports() function raises exception if the report data are missing.
+    """
+    data = deepcopy(test_data)
+    del data["report_data"]
+    with pytest.raises(ValueError):
+        utils.render_reports_v2(data)
+
+
+def test_render_reports_v2_missing_clusters():
+    """
+    Checks that render_reports() function raises exception
+    if the data for reported clusters are missing.
+    """
+    data = deepcopy(test_data)
+    del data["report_data"]["clusters"]
+    with pytest.raises(ValueError):
+        utils.render_reports_v2(data)
+
+
+def test_render_reports_v2_missing_reports():
+    """
+    Checks that render_reports() function raises exception
+    if the data for individual reports are missing.
+    """
+    data = deepcopy(test_data)
+    del data["report_data"]["reports"]
+    with pytest.raises(ValueError):
+        utils.render_reports_v2(data)
+

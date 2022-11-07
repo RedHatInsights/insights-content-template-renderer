@@ -205,7 +205,7 @@ def check_request_data_format(request_data):
     )
 
 
-def render_reports(request_data):
+def render_reports_v1(request_data):
     """
     Renders all reports and returns dictionary with the rendered results.
 
@@ -230,6 +230,50 @@ def render_reports(request_data):
             try:
                 report_result = render_report(content, report)
                 result["reports"].setdefault(cluster_id, []).append(report_result)
+            except (
+                ValueError,
+                RuleNotFoundException,
+                TemplateNotFoundException,
+            ) as exception:
+                log.debug(exception)
+                log.debug(
+                    "The report for rule '%s' and error key '%s' could not be processed.",
+                    get_reported_module(report),
+                    get_reported_error_key(report),
+                )
+
+    log.info("The reports from the request have been processed")
+
+    return result
+
+def render_reports_v2(request_data):
+    """
+    Renders all reports and returns dictionary with the rendered results.
+    The response contains a dict of rendered reports under (rule id, error key) key
+    instead of list in the v1 endpoint.
+
+    :param request_data: dictionary retrieved from JSON body of the request
+    :return: rendered reports
+    """
+    log.info("Loading content and report data")
+
+    if not check_request_data_format(request_data):
+        msg = "The request data do not have the expected structure"
+        log.error(msg)
+        raise ValueError(msg)
+
+    content = request_data["content"]
+    report_data = request_data["report_data"]
+    result = {"clusters": report_data["clusters"], "reports": {}}
+
+    log.info("Iterating through the reports of each cluster")
+
+    for cluster_id, cluster_data in report_data["reports"].items():
+        result["reports"][cluster_id] = {}
+        for report in cluster_data["reports"]:
+            try:
+                report_result = render_report(content, report)
+                result["reports"][cluster_id][report["rule_id"]] = report_result
             except (
                 ValueError,
                 RuleNotFoundException,
