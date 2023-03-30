@@ -8,3 +8,4 @@ pyyaml==6.0
 prometheus_fastapi_instrumentator==6.0.0
 requests==2.28.1
 httpx
+doT-js-py==1.0.0
