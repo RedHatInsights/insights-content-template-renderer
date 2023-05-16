@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9/python-39:1-114
+FROM registry.access.redhat.com/ubi9/python-39:1-117
 
 WORKDIR /insights-content-template-renderer
 
