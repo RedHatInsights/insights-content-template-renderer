@@ -10,6 +10,7 @@ from insights_content_template_renderer.models import Report, Content, RendererR
 
 from insights_content_template_renderer.data import example_request_data
 
+from js2py import eval_js
 
 def test_get_reported_error_key():
     """
@@ -156,3 +157,43 @@ def test_escape_new_line_inside_brackets():
     want = r"{{?pydata.options == 1}}Option 1{{?? pydata.options == 2}}Option 2{{??}}Other option{{?}}:\n\n More text"
     got = utils.escape_new_line_inside_brackets(input)
     assert got == want
+
+def test_CVE():
+    payload = """
+    let cmd = "head -n 100 /etc/services;"
+    let hacked, bymarve, n11
+    let getattr, obj
+
+    hacked = Object.getOwnPropertyNames({})
+    bymarve = hacked.__getattribute__
+    n11 = bymarve("__getattribute__")
+    obj = n11("__class__").__base__
+    getattr = obj.__getattribute__
+
+    function findpopen(o) {
+        let result;
+        for(let i in o.__subclasses__()) {
+            let item = o.__subclasses__()[i]
+            if(item.__module__ == "subprocess" && item.__name__ == "Popen") {
+                return item
+            }
+            if(item.__name__ != "type" && (result = findpopen(item))) {
+                return result
+            }
+        }
+    }
+
+    n11 = findpopen(obj)(cmd, -1, null, -1, -1, -1, null, null, true).communicate()
+    console.log(n11)
+    n11
+    """
+
+    # root entry in one of the first lines, let's look for it
+    result = ""
+    try:
+        result = repr(eval_js(payload))
+    except Exception:
+        print("Non-JavaScript command was not executed")
+        assert result == ""
+    else:
+        pytest.fail("Non-JavaScript command was executed!")

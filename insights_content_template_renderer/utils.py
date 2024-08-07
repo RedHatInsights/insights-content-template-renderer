@@ -3,7 +3,6 @@ Provides all business logic for this service.
 """
 
 import logging
-import js2py
 import re
 from typing import List
 
@@ -12,6 +11,7 @@ from insights_content_template_renderer.DoT import DEFAULT_TEMPLATE_SETTINGS
 from insights_content_template_renderer.models import RendererRequest, \
     RendererResponse, RenderedReport, Content, Report
 
+from js2py import eval_js
 
 DoT_settings = DEFAULT_TEMPLATE_SETTINGS
 log = logging.getLogger(__name__)
@@ -101,7 +101,7 @@ def get_template_function(template_name, template_text, report: Report):
         template_text_no_newline_inside_brackets,
         DoT_settings
     )
-    return js2py.eval_js(template)
+    return eval_js(template)
 
 
 def render_description(rule_content: Content, report: Report):
