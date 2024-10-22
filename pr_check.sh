@@ -29,6 +29,7 @@ DEPLOY_FRONTENDS="false"
 # Set the correct images for pull requests.
 # pr_check in pull requests still uses the old cloudservices images
 EXTRA_DEPLOY_ARGS="--set-parameter insights-content-template-renderer/IMAGE=quay.io/cloudservices/insights-content-template-renderer"
+EXTRA_DEPLOY_ARGS="${EXTRA_DEPLOY_ARGS} --no-remove-resources notifications-engine"
 
 export IQE_PLUGINS="ccx"
 export IQE_MARKER_EXPRESSION="servicelog"

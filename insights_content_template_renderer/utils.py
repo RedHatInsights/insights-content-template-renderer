@@ -218,7 +218,7 @@ def render_reports(request_data: RendererRequest) -> RendererResponse:
     report_data = request_data.report_data
     result = RendererResponse(
         clusters = report_data.clusters,
-        reports = []
+        reports = {}
     )
 
     log.info("Iterating through the reports of each cluster")

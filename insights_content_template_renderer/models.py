@@ -1,10 +1,9 @@
 from typing import List, Dict
-import uuid
 
 from pydantic import BaseModel
 
 from insights_content_template_renderer.data import \
-        example_request_data, example_response_data, example_content_data
+        request_data_example, response_data_example, content_example
 
 
 class Content(BaseModel):
@@ -19,7 +18,7 @@ class Content(BaseModel):
 
     class Config:
         schema_extra = {
-            "example": example_content_data 
+            "example": content_example 
         }
 
 
@@ -86,7 +85,7 @@ class RendererRequest(BaseModel):
 
     class Config:
         schema_extra = {
-            "example": example_request_data
+            "example": request_data_example
         }
 
 class RendererResponse(BaseModel):
@@ -95,5 +94,5 @@ class RendererResponse(BaseModel):
 
     class Config:
         schema_extra = {
-            "example": example_response_data
+            "example": response_data_example
         }

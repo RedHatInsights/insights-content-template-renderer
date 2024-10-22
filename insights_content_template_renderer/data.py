@@ -1,14 +1,14 @@
 import json
 
 
-example_request_data = {}
+request_data_example = {}
 with open("insights_content_template_renderer/data/request_data_example.json", encoding="UTF-8") as f:
-    example_request_data = json.load(f)
+    request_data_example = json.load(f)
 
-example_response_data = {}
+response_data_example = {}
 with open("insights_content_template_renderer/data/response_data_example.json", encoding="UTF-8") as f:
-    example_response_data = json.load(f)
+    response_data_example = json.load(f)
 
-example_content_data = {}
+content_example = {}
 with open("insights_content_template_renderer/data/content_example.json", encoding="UTF-8") as f:
-    example_content_data = json.load(f)
+    content_example = json.load(f)
