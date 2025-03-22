@@ -4,7 +4,7 @@ uvicorn==0.34.0
 js2py==0.74.0
 pytest==8.3.4
 pyyaml==6.0.2
-prometheus_fastapi_instrumentator==7.0.2
+prometheus_fastapi_instrumentator==7.1.0
 requests==2.32.3
 httpx
 doT-js-py==2.0.0
