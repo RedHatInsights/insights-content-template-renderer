@@ -30,7 +30,7 @@ jobs:
           pytest -vv
   bdd:
     runs-on: ubuntu-latest
-    container: quay.io/cloudservices/insights-behavioral-spec:latest
+    container: quay.io/redhat-services-prod/obsint-processing-tenant/insights-behavioral-spec/insights-behavioral-spec:latest
     env:
       PATH_TO_LOCAL_TEMPLATE_RENDERER: "${{ github.workspace }}"
       BDD_PATH: /insights-behavioral-spec
