@@ -41,8 +41,7 @@ async def rendered_reports(data: RendererRequest):
         rendered_report = render_reports(data)
         log.debug("Report successfully rendered")
     except Exception as exc:
-        log.error("error rendering template")
-        log.error(f"data:\n{data.json()}")
-        log.error(f"exception:\n{exc}")
+        log.error("error rendering template %s", exc, extra={"data": data.model_dump_json()})
         return PlainTextResponse("Internal Server Error", 500)
+
     return rendered_report
