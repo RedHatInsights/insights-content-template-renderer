@@ -2,7 +2,7 @@ argparse==1.4.0
 fastapi==0.121.1
 uvicorn==0.38.0
 js2py==0.74.0
-pytest==8.4.2
+pytest==9.0.0
 pyyaml==6.0.3
 prometheus_fastapi_instrumentator==7.1.0
 requests==2.32.5
