@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 from fastapi import status
 import pytest
+from unittest.mock import patch
 
 from insights_content_template_renderer.endpoints import app
 from insights_content_template_renderer.data import request_data_example, response_data_example
@@ -26,3 +27,14 @@ def test_valid_data():
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == response_data_example
 
+
+@patch('insights_content_template_renderer.endpoints.render_reports')
+def test_exception_handling(mock_render_reports):
+    """Test that exceptions in render_reports are properly handled."""
+    # Mock render_reports to raise an exception
+    mock_render_reports.side_effect = Exception("Test exception")
+
+    response = client.post(ENDPOINT__V1_RENDERED_REPORTS, json=request_data_example)
+
+    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.text == "Internal Server Error"

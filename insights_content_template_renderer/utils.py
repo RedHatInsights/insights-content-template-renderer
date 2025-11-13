@@ -31,6 +31,21 @@ class TemplateNotFoundException(Exception):
     """
 
 
+class RenderingError(Exception):
+    """
+    Exception raised when rendering fails, with attached request data for debugging.
+    The request_data attribute can be extracted by error tracking systems
+    without affecting error grouping/fingerprinting.
+    """
+    def __init__(self, message, original_exception=None, request_data=None):
+        super().__init__(message)
+        self.original_exception = original_exception
+        self.request_data = request_data
+
+    def __str__(self):
+        return f"{super().__str__()}"
+
+
 def get_reported_module(report: Report) -> str:
     """
     Returns the name of the reported module.
