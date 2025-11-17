@@ -28,35 +28,6 @@ def get_event_level():
     return logging.ERROR
 
 
-def before_send(event, hint):
-    """
-    Process events before sending to Sentry.
-    Extracts request_data from RenderingError exceptions and adds it to context
-    without affecting issue fingerprinting.
-    """
-    if 'exc_info' in hint:
-        exc_type, exc_value, tb = hint['exc_info']
-        # Check if the exception has request_data attribute (like RenderingError)
-        if hasattr(exc_value, 'request_data') and exc_value.request_data:
-            # Add the request data to contexts instead of the event itself
-            # This prevents it from affecting issue grouping
-            event.setdefault('contexts', {})
-            event['contexts']['request_data'] = {
-                'content_count': len(exc_value.request_data.get('content', [])),
-                'report_clusters': list(exc_value.request_data.get('report_data', {}).get('reports', {}).keys()),
-            }
-            # Optionally store full payload in extra (less visible in Sentry UI)
-            event.setdefault('extra', {})
-            event['extra']['full_request_payload'] = str(exc_value.request_data)
-
-        # If there's an original_exception, include it in extra
-        if hasattr(exc_value, 'original_exception') and exc_value.original_exception:
-            event.setdefault('extra', {})
-            event['extra']['original_exception'] = str(exc_value.original_exception)
-
-    return event
-
-
 def init_sentry(dsn=None, transport=None, environment=None):
     """Configure and initialize sentry SDK for this project."""
     if dsn:
@@ -70,5 +41,4 @@ def init_sentry(dsn=None, transport=None, environment=None):
             max_breadcrumbs=15,
             transport=transport,
             environment=environment,
-            before_send=before_send,
         )
