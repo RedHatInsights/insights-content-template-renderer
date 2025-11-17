@@ -51,8 +51,6 @@ async def rendered_reports(data: RendererRequest):
         # Wrap the exception with request data for debugging
         error = RenderingError(
             message=f"error rendering template: {exc}",
-            original_exception=exc,
-            request_data=data.model_dump()
         )
         log.exception(error)
         # Re-raise so Sentry can capture it with the request_data

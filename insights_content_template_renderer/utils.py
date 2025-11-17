@@ -37,10 +37,6 @@ class RenderingError(Exception):
     The request_data attribute can be extracted by error tracking systems
     without affecting error grouping/fingerprinting.
     """
-    def __init__(self, message, original_exception=None, request_data=None):
-        super().__init__(message)
-        self.original_exception = original_exception
-        self.request_data = request_data
 
 
 def get_reported_module(report: Report) -> str:
