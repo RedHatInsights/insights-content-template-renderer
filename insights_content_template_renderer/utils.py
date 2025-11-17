@@ -42,9 +42,6 @@ class RenderingError(Exception):
         self.original_exception = original_exception
         self.request_data = request_data
 
-    def __str__(self):
-        return f"{super().__str__()}"
-
 
 def get_reported_module(report: Report) -> str:
     """

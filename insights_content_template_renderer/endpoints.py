@@ -54,6 +54,6 @@ async def rendered_reports(data: RendererRequest):
             original_exception=exc,
             request_data=data.model_dump()
         )
-        log.error(str(error))
+        log.exception(error)
         # Re-raise so Sentry can capture it with the request_data
         raise error from exc
