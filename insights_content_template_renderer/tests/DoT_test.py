@@ -1,4 +1,4 @@
-import js2py
+import pythonmonkey as pm
 
 from insights_content_template_renderer import DoT
 from insights_content_template_renderer.DoT import DEFAULT_TEMPLATE_SETTINGS
@@ -14,7 +14,7 @@ def test_single_quote_correct_handling():
     before creating a JS function out of them.
     """
     template = "An OCP node behaves unexpectedly when it doesn't meet the minimum resource requirements"
-    text = js2py.eval_js(renderer.template(template, DoT_settings))()
+    text = pm.eval(f"({renderer.template(template, DoT_settings)})")()
     assert (
         text
         == "An OCP node behaves unexpectedly when it doesn't meet the minimum resource requirements"
@@ -31,5 +31,5 @@ def test_nonletter_characters_correct_handling():
             r"sure that:\n\n1. Node foo1 (undefined) * Has enough memory, minimum requirement is 16. Currently its " \
             r"only configured with 8.16GB. "
 
-    text = js2py.eval_js(renderer.template(input, DoT_settings._replace(strip = False)))()
+    text = pm.eval(f"({renderer.template(input, DoT_settings._replace(strip = False))})")()
     assert text == input

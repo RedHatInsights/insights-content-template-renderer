@@ -1,12 +1,3 @@
-from js2py.constructors.jsobject import Object
-
-def patch_js2py():
-    """Patching js2py for CVE-2024-28397"""
-    fn = Object.own["getOwnPropertyNames"]["value"].code
-    def wraps(*args, **kwargs):
-        result = fn(*args, **kwargs)
-        return list(result)
-    Object.own["getOwnPropertyNames"]["value"].code = wraps
-
-# Apply the patch on import of this file
-patch_js2py()
+# CVE-2024-28397 patch removed as we've migrated from js2py to pythonmonkey
+# pythonmonkey uses SpiderMonkey (Mozilla's JavaScript engine) which is actively maintained
+# and doesn't have the same security vulnerabilities as js2py
