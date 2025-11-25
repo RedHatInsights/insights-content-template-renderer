@@ -5,13 +5,30 @@ Provides all business logic for this service.
 import logging
 import re
 from typing import List
+import multiprocessing as mp
 
 from insights_content_template_renderer import DoT
 from insights_content_template_renderer.DoT import DEFAULT_TEMPLATE_SETTINGS
 from insights_content_template_renderer.models import RendererRequest, \
     RendererResponse, RenderedReport, Content, Report
 
-from js2py import eval_js
+
+# Worker function to execute JavaScript in a separate process
+# This avoids the pythonmonkey FastAPI recursion bug
+# (see https://github.com/Distributive-Network/PythonMonkey/issues/490)
+def _eval_js_worker(js_code, data, result_queue):
+    """Execute JavaScript in a separate process to avoid FastAPI context issues."""
+    try:
+        import pythonmonkey as pm
+        func = pm.eval(js_code)
+        result = func(data)
+        # Convert to native Python string to avoid pickling issues
+        # PythonMonkey returns JS strings that can't be pickled
+        result_str = str(result) if result is not None else ''
+        result_queue.put(('success', result_str))
+    except Exception as e:
+        import traceback
+        result_queue.put(('error', f"{str(e)}\n{traceback.format_exc()}"))
 
 DoT_settings = DEFAULT_TEMPLATE_SETTINGS
 log = logging.getLogger(__name__)
@@ -109,7 +126,55 @@ def get_template_function(template_name, template_text, report: Report):
         template_text_no_newline_inside_brackets,
         DoT_settings
     )
-    return eval_js(template)
+
+    wrapped_template = f"({template})"
+
+    # Return a callable that executes the JS in a separate process
+    def template_func(data):
+        try:
+            # Use spawn method to create a truly fresh process
+            # This is required because fork inherits FastAPI context that breaks pythonmonkey
+            ctx = mp.get_context('spawn')
+
+            # Use Manager for better queue reliability across Python versions
+            manager = ctx.Manager()
+            result_queue = manager.Queue()
+
+            # Workaround for pythonmonkey FastAPI recursion bug
+            # Execute JavaScript in a separate process to avoid FastAPI context
+            # (see https://github.com/Distributive-Network/PythonMonkey/issues/490)
+            process = ctx.Process(
+                target=_eval_js_worker,
+                args=(wrapped_template, data, result_queue)
+            )
+            process.start()
+
+            # Wait for result with timeout
+            process.join(timeout=5)
+
+            if process.is_alive():
+                process.terminate()
+                process.join()
+                raise TimeoutError("Template execution timed out")
+
+            if process.exitcode != 0:
+                raise RuntimeError(f"Process exited with code {process.exitcode}")
+
+            # Get result from queue
+            status, result = result_queue.get(timeout=1)
+
+            if status == 'error':
+                raise RuntimeError(f"JavaScript execution failed: {result}")
+
+            return result
+
+        except Exception as e:
+            log.error(f"Failed to execute template: {template_name}")
+            log.error(f"Template text: {template_text[:200]}")
+            log.error(f"Generated JS (first 500 chars): {template[:500]}")
+            raise
+
+    return template_func
 
 
 def render_description(rule_content: Content, report: Report):
