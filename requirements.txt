@@ -1,5 +1,5 @@
 argparse==1.4.0
-fastapi==0.122.0
+fastapi==0.123.0
 uvicorn==0.38.0
 js2py==0.74.0
 pytest==9.0.1
