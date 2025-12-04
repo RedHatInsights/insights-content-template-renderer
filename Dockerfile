@@ -9,7 +9,7 @@ COPY . $HOME
 
 ENV PATH="$VENV/bin:$PATH"
 
-RUN microdnf install --nodocs --noplugins -y python3.11 && \
+RUN microdnf install --nodocs --noplugins -y python3.11 npm && \
     python3.11 -m venv $VENV && \
     pip install --verbose --no-cache-dir -r requirements.txt
 
