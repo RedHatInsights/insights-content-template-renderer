@@ -62,8 +62,9 @@ class JsExecutor:
         Get or create the process pool for JavaScript execution.
         Uses lazy initialization to avoid creating processes during module import.
 
-        Uses a single worker process since each uvicorn worker has its own pool.
-
+        Uses a single worker process because the purpose of the executor is to isolate
+        the monkeypython usage, not parallel processing.
+        
         :return: The process pool instance
         """
         if self._process_pool is None:
@@ -142,16 +143,16 @@ class JsExecutor:
 @cache
 def get_js_executor():
     """
-    Get the global JsExecutor singleton instance.
+    Get the JsExecutor instance (cached if available).
 
-    :return: The global JsExecutor instance
+    :return: The JsExecutor instance
     """
     return JsExecutor()
 
 
 def shutdown_js_executor():
     """
-    Shutdown the global JsExecutor instance.
+    Shutdown the JsExecutor instance.
     Should be called during application shutdown.
     """
     executor = get_js_executor()
