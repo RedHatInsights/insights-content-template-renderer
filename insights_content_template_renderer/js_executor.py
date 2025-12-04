@@ -9,6 +9,7 @@ Running JS in the separate process avoids the PythonMonkey FastAPI recursion bug
 import logging
 import multiprocessing as mp
 
+from functools import cache
 
 log = logging.getLogger(__name__)
 
@@ -111,9 +112,7 @@ class JsExecutor:
         except mp.TimeoutError:
             log.error(f"JavaScript execution timed out after {timeout}s, recreating pool")
 
-            # Terminate the pool to kill any hung workers
-            # Note: pythonmonkey doesn't support execution timeouts at the eval() level,
-            # so a hung worker will continue running until terminated
+            # Terminate the pool to kill a hung worker
             if self._process_pool is not None:
                 self._process_pool.terminate()
                 self._process_pool = None
@@ -133,25 +132,14 @@ class JsExecutor:
             log.info("JavaScript worker pool shutdown complete")
 
 
-# Global singleton instance
-_js_executor = None
-_executor_lock = mp.Lock()
-
-
+@cache
 def get_js_executor():
     """
     Get the global JsExecutor singleton instance.
 
     :return: The global JsExecutor instance
     """
-    global _js_executor
-
-    if _js_executor is None:
-        with _executor_lock:
-            if _js_executor is None:
-                _js_executor = JsExecutor()
-
-    return _js_executor
+    return JsExecutor()
 
 
 def shutdown_js_executor():
@@ -159,8 +147,6 @@ def shutdown_js_executor():
     Shutdown the global JsExecutor instance.
     Should be called during application shutdown.
     """
-    global _js_executor
-
-    if _js_executor is not None:
-        _js_executor.shutdown()
-        _js_executor = None
+    executor = get_js_executor()
+    executor.shutdown()
+    get_js_executor.cache_clear()
