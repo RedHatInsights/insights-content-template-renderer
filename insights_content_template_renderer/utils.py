@@ -126,7 +126,7 @@ def get_template_function(template_name, template_text, report: Report):
                 extra={"js_code": wrapped_js_code}
             )
             raise
-        except Exception:
+        except RuntimeError:
             log.error(
                 "Failed to execute template",
                 extra={"js_code": wrapped_js_code}

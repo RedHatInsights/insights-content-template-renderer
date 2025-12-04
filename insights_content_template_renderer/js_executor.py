@@ -25,15 +25,22 @@ def _eval_js_worker_task(js_code, data):
     """
     try:
         import pythonmonkey as pm
+        from pythonmonkey import SpiderMonkeyError
+
         func = pm.eval(js_code)
         result = func(data)
         # Convert to native Python string to avoid pickling issues
         # PythonMonkey returns JS strings that can't be pickled
         result_str = str(result) if result is not None else ''
         return ('success', result_str)
-    except Exception as e:
+    except SpiderMonkeyError as e:
+        # JavaScript execution errors (syntax, runtime, etc.)
         import traceback
-        return ('error', f"{str(e)}\n{traceback.format_exc()}")
+        return ('error', f"JavaScript error: {str(e)}\n{traceback.format_exc()}")
+    except (TypeError, AttributeError, ValueError) as e:
+        # Python-side errors (invalid arguments, etc.)
+        import traceback
+        return ('error', f"Python error: {str(e)}\n{traceback.format_exc()}")
 
 
 class JsExecutor:
