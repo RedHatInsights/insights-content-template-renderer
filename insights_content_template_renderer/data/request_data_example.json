@@ -32,7 +32,7 @@
       },
       "generic": "",
       "summary": "",
-      "resolution": "Red Hat recommends you to fix the issue with {{~ pydata.nodes :node }}",
+      "resolution": "Red Hat recommends you to fix the issue with {{~ pydata.nodes :node }}{{=node[\"name\"]}}{{~}}",
       "more_info": "For more information about this, refer to the [Documentation](https://docs.openshift.com)",
       "reason": "Node{{?pydata.nodes.length>1}}s{{?}} not working",
       "HasReason": true

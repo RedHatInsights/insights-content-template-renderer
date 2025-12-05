@@ -10,6 +10,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 
 from insights_content_template_renderer.sentry import init_sentry
 from insights_content_template_renderer.utils import render_reports, RenderingError
+from insights_content_template_renderer.js_executor import shutdown_js_executor
 from insights_content_template_renderer.models import RendererRequest, RendererResponse
 
 
@@ -29,6 +30,13 @@ async def rendering_error_handler(request, exc: RenderingError):
 @app.on_event("startup")
 async def expose_metrics():
     instrumentator.expose(app, endpoint='/metrics', tags=['metrics'])
+
+
+@app.on_event("shutdown")
+async def shutdown_workers():
+    """Gracefully shutdown the JavaScript worker pool on application shutdown."""
+    log.info("Application shutdown initiated, cleaning up worker pool")
+    shutdown_js_executor()
 
 
 @app.post("/rendered_reports", response_model=RendererResponse)

@@ -4,14 +4,14 @@ Provides all business logic for this service.
 
 import logging
 import re
+import os
 from typing import List
 
 from insights_content_template_renderer import DoT
 from insights_content_template_renderer.DoT import DEFAULT_TEMPLATE_SETTINGS
 from insights_content_template_renderer.models import RendererRequest, \
     RendererResponse, RenderedReport, Content, Report
-
-from js2py import eval_js
+from insights_content_template_renderer.js_executor import get_js_executor
 
 DoT_settings = DEFAULT_TEMPLATE_SETTINGS
 log = logging.getLogger(__name__)
@@ -105,11 +105,35 @@ def get_template_function(template_name, template_text, report: Report):
         escape_raw_text_for_js(template_text)
     )
 
-    template = renderer.template(
+    js_code = renderer.template(
         template_text_no_newline_inside_brackets,
         DoT_settings
     )
-    return eval_js(template)
+
+    wrapped_js_code = f"({js_code})"
+
+    # Return a callable that executes the JS in a reusable worker process
+    def template_func(data):
+        try:
+            # Get the JS executor and execute the template
+            executor = get_js_executor()
+            result = executor.execute(wrapped_js_code, data, timeout=5)
+            return result
+
+        except TimeoutError:
+            log.error(
+                "Template execution timed out",
+                extra={"js_code": wrapped_js_code}
+            )
+            raise
+        except RuntimeError:
+            log.error(
+                "Failed to execute template",
+                extra={"js_code": wrapped_js_code}
+            )
+            raise
+
+    return template_func
 
 
 def render_description(rule_content: Content, report: Report):
