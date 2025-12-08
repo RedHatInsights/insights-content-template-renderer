@@ -64,7 +64,7 @@ class JsExecutor:
 
         Uses a single worker process because the purpose of the executor is to isolate
         the monkeypython usage, not parallel processing.
-        
+
         :return: The process pool instance
         """
         if self._process_pool is None:
@@ -75,7 +75,9 @@ class JsExecutor:
 
                     # Use spawn method to avoid inheriting FastAPI context
                     ctx = mp.get_context('spawn')
-                    self._process_pool = ctx.Pool(processes=1)
+                    # Restart worker after 1000 tasks to prevent SpiderMonkey memory leak
+                    # from pm.eval() accumulating compiled JavaScript functions
+                    self._process_pool = ctx.Pool(processes=1, maxtasksperchild=1000)
 
                     log.info("JavaScript worker process initialized successfully")
 
