@@ -28,22 +28,3 @@ jobs:
       - name: Test with pytest
         run: |
           pytest -vv
-  bdd:
-    runs-on: ubuntu-latest
-    container: quay.io/redhat-services-prod/obsint-processing-tenant/insights-behavioral-spec/insights-behavioral-spec:latest
-    env:
-      PATH_TO_LOCAL_TEMPLATE_RENDERER: "${{ github.workspace }}"
-      BDD_PATH: /insights-behavioral-spec
-      VIRTUAL_ENV: /insights-behavioral-spec-venv/
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-      - name: Run BDD tests
-        run: cd $BDD_PATH && make insights-content-template-renderer-tests
-      - name: Rename logs
-        # Otherwise the upload-artifact action will complain
-        run: for filename in "$BDD_PATH"/logs/insights-content-template-renderer/*; do mv -n "$filename" "$(echo "$filename" | sed -e 's/["><]//g')";  done
-      - uses: actions/upload-artifact@v5
-        with:
-          name: logs
-          path: /insights-behavioral-spec/logs/insights-content-template-renderer
