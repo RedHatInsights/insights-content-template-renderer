@@ -1,0 +1,13 @@
+name: Content template renderer BDD tests
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+
+jobs:
+  bdd:
+    name: BDD tests
+    uses: RedHatInsights/processing-tools/.github/workflows/bdd.yaml@master
+    with:
+      service: content-template-renderer
