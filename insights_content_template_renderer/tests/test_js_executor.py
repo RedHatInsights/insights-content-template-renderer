@@ -12,8 +12,8 @@ Tests the JavaScript execution pool functionality including:
 import pytest
 
 from insights_content_template_renderer.js_executor import (
-    _eval_js_worker_task,
     JsExecutor,
+    _eval_js_worker_task,
     get_js_executor,
     shutdown_js_executor,
 )

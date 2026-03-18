@@ -46,5 +46,5 @@ You should see the generated report.
 
 6. Delete the namespace
 ```
-bonfire namespace release $NAMESPACE 
+bonfire namespace release $NAMESPACE
 ```

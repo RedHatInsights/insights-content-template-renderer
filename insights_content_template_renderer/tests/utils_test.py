@@ -3,14 +3,19 @@ Unit tests for utils.py
 """
 
 import pydantic
-from typing import List
 import pytest
-from insights_content_template_renderer import utils
-from insights_content_template_renderer.models import Report, Content, RendererRequest, RenderedReport, RendererResponse
-
-from insights_content_template_renderer.data import request_data_example
-
 import pythonmonkey as pm
+
+from insights_content_template_renderer import utils
+from insights_content_template_renderer.data import request_data_example
+from insights_content_template_renderer.models import (
+    Content,
+    RenderedReport,
+    RendererRequest,
+    RendererResponse,
+    Report,
+)
+
 
 def test_get_reported_error_key():
     """
@@ -38,13 +43,18 @@ def test_get_reported_module():
 
 def test_escape_raw_text_for_js():
     """
-        Checks that the escape_raw_text_for_JS() function converts the input string
-        into its literal representation so it can be used properly by js2py.eval_js
+    Checks that the escape_raw_text_for_JS() function converts the input string
+    into its literal representation so it can be used properly by js2py.eval_js
     """
-    text = "Something to report.\n\nMake sure that:\n\t1Node is alive and\n\t   * Has enough memory,\n\t   * Has " \
-           "enough CPU. "
-    assert utils.escape_raw_text_for_js(text) == r"Something to report.\n\nMake sure that:\n\t1Node is alive and\n\t " \
-                                                 r"  * Has enough memory,\n\t   * Has enough CPU. "
+    text = (
+        "Something to report.\n\nMake sure that:\n\t1Node is alive and\n\t   * Has enough memory,\n"
+        "\t   * Has enough CPU. "
+    )
+    assert (
+        utils.escape_raw_text_for_js(text)
+        == r"Something to report.\n\nMake sure that:\n\t1Node is alive and\n\t "
+        r"  * Has enough memory,\n\t   * Has enough CPU. "
+    )
 
 
 def test_render_resolution():
@@ -91,7 +101,6 @@ def test_render_description():
     assert rendered == result
 
 
-
 def test_render_report():
     """
     Checks that render_report() renders the whole report correctly.
@@ -100,13 +109,13 @@ def test_render_report():
         "5d5892d3-1f74-4ccf-91af-548dfc9767aa"
     ]
     report = Report.parse_obj(cluster_reports["reports"][0])
-    contents = pydantic.parse_obj_as(List[Content], request_data_example["content"])
+    contents = pydantic.parse_obj_as(list[Content], request_data_example["content"])
     result = RenderedReport(
-        rule_id = "ccx_rules_ocp.external.rules.1",
-        error_key = "RULE_1",
-        resolution = "Red Hat recommends you to fix the issues with this node",
-        reason = "Node not working.",
-        description = "RULE_1 description foo1"
+        rule_id="ccx_rules_ocp.external.rules.1",
+        error_key="RULE_1",
+        resolution="Red Hat recommends you to fix the issues with this node",
+        reason="Node not working.",
+        description="RULE_1 description foo1",
     )
     rendered = utils.render_report(contents, report)
     assert rendered == result
@@ -123,8 +132,8 @@ def test_render_report_missing_rule_content():
     report = Report.parse_obj(cluster_reports["reports"][0])
     contents = request_data_example["content"].copy()
     del contents[0]
-    contents = pydantic.parse_obj_as(List[Content], contents)
-    with pytest.raises(utils.RuleNotFoundException):
+    contents = pydantic.parse_obj_as(list[Content], contents)
+    with pytest.raises(utils.RuleNotFoundError):
         utils.render_report(contents, report)
 
 
@@ -133,32 +142,32 @@ def test_render_reports():
     Checks that render_reports() function renders all reports correctly.
     """
     result = {
-        "clusters": [
-            "5d5892d3-1f74-4ccf-91af-548dfc9767aa"
-        ],
+        "clusters": ["5d5892d3-1f74-4ccf-91af-548dfc9767aa"],
         "reports": {
             "5d5892d3-1f74-4ccf-91af-548dfc9767aa": [
-            {
-                "rule_id": "ccx_rules_ocp.external.rules.1",
-                "error_key": "RULE_1",
-                "resolution": "Red Hat recommends you to fix the issues with this node",
-                "reason": "Node not working.",
-                "description": "RULE_1 description foo1"
-            }
+                {
+                    "rule_id": "ccx_rules_ocp.external.rules.1",
+                    "error_key": "RULE_1",
+                    "resolution": "Red Hat recommends you to fix the issues with this node",
+                    "reason": "Node not working.",
+                    "description": "RULE_1 description foo1",
+                }
             ]
-        }
+        },
     }
     req = RendererRequest.parse_obj(request_data_example)
     rendered = utils.render_reports(req)
     assert RendererResponse.parse_obj(rendered).dict() == result
 
+
 def test_escape_new_line_inside_brackets():
-    input = r"{{?pydata.options == 1\n}}Option 1{{?? pydata.options == 2\n}}Option 2{{??\n}}Other option{{?}}:\n\n More text"
-    want = r"{{?pydata.options == 1}}Option 1{{?? pydata.options == 2}}Option 2{{??}}Other option{{?}}:\n\n More text"
+    input = r"{{?pydata.options == 1\n}}Option 1{{?? pydata.options == 2\n}}Option 2{{??\n}}Other option{{?}}:\n\n More text"  # noqa: E501
+    want = r"{{?pydata.options == 1}}Option 1{{?? pydata.options == 2}}Option 2{{??}}Other option{{?}}:\n\n More text"  # noqa: E501
     got = utils.escape_new_line_inside_brackets(input)
     assert got == want
 
-def test_CVE():
+
+def test_CVE():  # noqa: N802
     """
     Test for CVE-2024-28397 (js2py vulnerability).
     This vulnerability allowed Python code execution from JavaScript.
@@ -204,7 +213,9 @@ def test_CVE():
     else:
         # If no exception, verify that the result doesn't contain system information
         if "root" in result.lower() or "/etc/services" in result:
-            pytest.fail("Non-JavaScript command was executed! Security vulnerability detected!")
+            pytest.fail(
+                "Non-JavaScript command was executed! Security vulnerability detected!"
+            )
         # Otherwise, the payload failed to access Python internals (good)
 
 
@@ -214,49 +225,58 @@ def test_array_includes_es7_support():
     This verifies pythonmonkey supports modern JavaScript features that js2py did not.
     """
     # Template using ES7 Array.includes() method
-    template_text = """{{? pydata.affected_namespaces.includes("openshift-logging") }}Namespace found{{?}}"""
+    template_text = """{{? pydata.affected_namespaces.includes("openshift-logging") }}Namespace found{{?}}"""  # noqa: E501
 
     # Test data with the namespace in the array
-    report = Report.parse_obj({
-        "rule_id": "test.rule|ERROR_KEY",
-        "component": "test.rule.report",
-        "type": "rule",
-        "key": "ERROR_KEY",
-        "details": {
-            "affected_namespaces": ["openshift-logging", "openshift-operators"]
-        },
-        "tags": [],
-        "links": {}
-    })
+    report = Report.parse_obj(
+        {
+            "rule_id": "test.rule|ERROR_KEY",
+            "component": "test.rule.report",
+            "type": "rule",
+            "key": "ERROR_KEY",
+            "details": {
+                "affected_namespaces": ["openshift-logging", "openshift-operators"]
+            },
+            "tags": [],
+            "links": {},
+        }
+    )
 
-    content = Content.parse_obj({
-        "plugin": {"name": "", "node_id": "", "product_code": "", "python_module": "test.rule"},
-        "error_keys": {
-            "ERROR_KEY": {
-                "metadata": {
-                    "description": template_text,
-                    "impact": 1,
-                    "likelihood": 1,
-                    "publish_date": "2024-01-01",
-                    "status": "active",
-                    "tags": []
-                },
-                "total_risk": 1,
-                "generic": "",
-                "summary": "",
-                "resolution": "",
-                "more_info": "",
-                "reason": "",
-                "HasReason": False
-            }
-        },
-        "generic": "",
-        "summary": "",
-        "resolution": "",
-        "more_info": "",
-        "reason": "",
-        "HasReason": False
-    })
+    content = Content.parse_obj(
+        {
+            "plugin": {
+                "name": "",
+                "node_id": "",
+                "product_code": "",
+                "python_module": "test.rule",
+            },
+            "error_keys": {
+                "ERROR_KEY": {
+                    "metadata": {
+                        "description": template_text,
+                        "impact": 1,
+                        "likelihood": 1,
+                        "publish_date": "2024-01-01",
+                        "status": "active",
+                        "tags": [],
+                    },
+                    "total_risk": 1,
+                    "generic": "",
+                    "summary": "",
+                    "resolution": "",
+                    "more_info": "",
+                    "reason": "",
+                    "HasReason": False,
+                }
+            },
+            "generic": "",
+            "summary": "",
+            "resolution": "",
+            "more_info": "",
+            "reason": "",
+            "HasReason": False,
+        }
+    )
 
     # Render the template
     rendered = utils.render_description(content, report)

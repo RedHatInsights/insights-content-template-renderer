@@ -4,27 +4,30 @@ Provides all business logic for this service.
 
 import logging
 import re
-import os
-from typing import List
 
-from insights_content_template_renderer import DoT
-from insights_content_template_renderer.DoT import DEFAULT_TEMPLATE_SETTINGS
-from insights_content_template_renderer.models import RendererRequest, \
-    RendererResponse, RenderedReport, Content, Report
+from insights_content_template_renderer import dot
+from insights_content_template_renderer.dot import DEFAULT_TEMPLATE_SETTINGS
 from insights_content_template_renderer.js_executor import get_js_executor
+from insights_content_template_renderer.models import (
+    Content,
+    RenderedReport,
+    RendererRequest,
+    RendererResponse,
+    Report,
+)
 
 DoT_settings = DEFAULT_TEMPLATE_SETTINGS
 log = logging.getLogger(__name__)
-renderer = DoT.Renderer()
+renderer = dot.Renderer()
 
 
-class RuleNotFoundException(Exception):
+class RuleNotFoundError(Exception):
     """
     Exception raised if the content data for reported module do not exist.
     """
 
 
-class TemplateNotFoundException(Exception):
+class TemplateNotFoundError(Exception):
     """
     Exception raised if the template for given reported module
     and field name ('reason'/'resolution') does not exist.
@@ -72,7 +75,7 @@ def escape_new_line_inside_brackets(text):
     Escape the new lines inside brackets that were causing some issues.
     https://issues.redhat.com/browse/CCXDEV-10314
     """
-    return re.sub(r'{{(.*?)\\n}}', r'{{\1}}', text)
+    return re.sub(r"{{(.*?)\\n}}", r"{{\1}}", text)
 
 
 def unescape_raw_text_for_python(text):
@@ -80,7 +83,7 @@ def unescape_raw_text_for_python(text):
     Undoes all the escaping of special characters like whitespace, newline, tabulation,
     etc, as well as single quotes.
     """
-    return text.encode().decode('unicode-escape')
+    return text.encode().decode("unicode-escape")
 
 
 def get_template_function(template_name, template_text, report: Report):
@@ -96,7 +99,7 @@ def get_template_function(template_name, template_text, report: Report):
     if template_text is None or template_text == "":
         reported_module = get_reported_module(report)
         reported_error_key = get_reported_error_key(report)
-        raise TemplateNotFoundException(
+        raise TemplateNotFoundError(
             f"Template '{template_name}' has not been found for rule '{reported_module}' "
             + f"and error key '{reported_error_key}'."
         )
@@ -105,10 +108,7 @@ def get_template_function(template_name, template_text, report: Report):
         escape_raw_text_for_js(template_text)
     )
 
-    js_code = renderer.template(
-        template_text_no_newline_inside_brackets,
-        DoT_settings
-    )
+    js_code = renderer.template(template_text_no_newline_inside_brackets, DoT_settings)
 
     wrapped_js_code = f"({js_code})"
 
@@ -122,15 +122,11 @@ def get_template_function(template_name, template_text, report: Report):
 
         except TimeoutError:
             log.error(
-                "Template execution timed out",
-                extra={"js_code": wrapped_js_code}
+                "Template execution timed out", extra={"js_code": wrapped_js_code}
             )
             raise
         except RuntimeError:
-            log.error(
-                "Failed to execute template",
-                extra={"js_code": wrapped_js_code}
-            )
+            log.error("Failed to execute template", extra={"js_code": wrapped_js_code})
             raise
 
     return template_func
@@ -157,7 +153,7 @@ def render_description(rule_content: Content, report: Report):
         description_template = get_template_function(
             "metadata.description", template_text, report
         )
-    except TemplateNotFoundException:
+    except TemplateNotFoundError:
         return ""
     return unescape_raw_text_for_python(description_template(report.details))
 
@@ -180,7 +176,7 @@ def render_resolution(rule_content: Content, report: Report):
 
     try:
         resolution_template = get_template_function("resolution", template_text, report)
-    except TemplateNotFoundException:
+    except TemplateNotFoundError:
         return ""
     return unescape_raw_text_for_python(resolution_template(report.details))
 
@@ -203,12 +199,12 @@ def render_reason(rule_content: Content, report: Report):
 
     try:
         reason_template = get_template_function("reason", template_text, report)
-    except TemplateNotFoundException:
+    except TemplateNotFoundError:
         return ""
     return unescape_raw_text_for_python(reason_template(report.details))
 
 
-def render_report(content: List[Content], report: Report) -> RenderedReport:
+def render_report(content: list[Content], report: Report) -> RenderedReport:
     """
     Renders the given report.
 
@@ -225,16 +221,16 @@ def render_report(content: List[Content], report: Report) -> RenderedReport:
     for rule in content:
         if reported_module == rule.plugin["python_module"]:
             report_result = RenderedReport(
-                rule_id = reported_module,
-                error_key = reported_error_key,
-                resolution = render_resolution(rule, report),
-                reason = render_reason(rule, report),
-                description = render_description(rule, report),
+                rule_id=reported_module,
+                error_key=reported_error_key,
+                resolution=render_resolution(rule, report),
+                reason=render_reason(rule, report),
+                description=render_description(rule, report),
             )
             return report_result
 
     msg = f"The rule content for '{reported_module}' has not been found."
-    raise RuleNotFoundException(msg)
+    raise RuleNotFoundError(msg)
 
 
 def render_reports(request_data: RendererRequest) -> RendererResponse:
@@ -248,10 +244,7 @@ def render_reports(request_data: RendererRequest) -> RendererResponse:
 
     content = request_data.content
     report_data = request_data.report_data
-    result = RendererResponse(
-        clusters = report_data.clusters,
-        reports = {}
-    )
+    result = RendererResponse(clusters=report_data.clusters, reports={})
 
     log.info("Iterating through the reports of each cluster")
 
@@ -262,8 +255,8 @@ def render_reports(request_data: RendererRequest) -> RendererResponse:
                 result.reports.setdefault(cluster_id, []).append(report_result)
             except (
                 ValueError,
-                RuleNotFoundException,
-                TemplateNotFoundException,
+                RuleNotFoundError,
+                TemplateNotFoundError,
             ) as exception:
                 log.debug(exception)
                 log.debug(

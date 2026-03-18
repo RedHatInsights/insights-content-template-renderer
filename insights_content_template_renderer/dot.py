@@ -25,19 +25,20 @@ This module implements the DoT.js template framework in Python.
 Source: https://github.com/lucemia/doT
 """
 
-import doT
 import logging
+
+import doT
 
 log = logging.getLogger(__name__)
 
 version = "1.0.0"
 
 DEFAULT_TEMPLATE_SETTINGS = doT.TemplateSettings()
-DEFAULT_TEMPLATE_SETTINGS = DEFAULT_TEMPLATE_SETTINGS._replace(
-    varname = "pydata"
-)
+DEFAULT_TEMPLATE_SETTINGS = DEFAULT_TEMPLATE_SETTINGS._replace(varname="pydata")
+
 
 class Renderer:
     """Class encapsulating logic of rendering DoT.js templates."""
+
     def template(self, tmpl, c=None, _def=None):
         return doT.template(tmpl, c, _def)
