@@ -8,7 +8,6 @@ Running JS in the separate process avoids the PythonMonkey FastAPI recursion bug
 
 import logging
 import multiprocessing as mp
-
 from functools import cache
 
 log = logging.getLogger(__name__)
@@ -31,16 +30,18 @@ def _eval_js_worker_task(js_code, data):
         result = func(data)
         # Convert to native Python string to avoid pickling issues
         # PythonMonkey returns JS strings that can't be pickled
-        result_str = str(result) if result is not None else ''
-        return ('success', result_str)
+        result_str = str(result) if result is not None else ""
+        return ("success", result_str)
     except SpiderMonkeyError as e:
         # JavaScript execution errors (syntax, runtime, etc.)
         import traceback
-        return ('error', f"JavaScript error: {str(e)}\n{traceback.format_exc()}")
+
+        return ("error", f"JavaScript error: {str(e)}\n{traceback.format_exc()}")
     except (TypeError, AttributeError, ValueError) as e:
         # Python-side errors (invalid arguments, etc.)
         import traceback
-        return ('error', f"Python error: {str(e)}\n{traceback.format_exc()}")
+
+        return ("error", f"Python error: {str(e)}\n{traceback.format_exc()}")
 
 
 class JsExecutor:
@@ -74,7 +75,7 @@ class JsExecutor:
                     log.info("Initializing JavaScript worker process")
 
                     # Use spawn method to avoid inheriting FastAPI context
-                    ctx = mp.get_context('spawn')
+                    ctx = mp.get_context("spawn")
                     # Restart worker after 1000 tasks to prevent SpiderMonkey memory leak
                     # from pm.eval() accumulating compiled JavaScript functions
                     self._process_pool = ctx.Pool(processes=1, maxtasksperchild=1000)
@@ -106,28 +107,29 @@ class JsExecutor:
 
             # Submit task to pool with timeout
             # Using apply_async allows us to set a timeout without blocking other requests
-            async_result = pool.apply_async(
-                _eval_js_worker_task,
-                args=(js_code, data)
-            )
+            async_result = pool.apply_async(_eval_js_worker_task, args=(js_code, data))
 
             # Wait for result with timeout
             status, result = async_result.get(timeout=timeout)
 
-            if status == 'error':
+            if status == "error":
                 raise RuntimeError(f"JavaScript execution failed: {result}")
 
             return result
 
-        except mp.TimeoutError:
-            log.error(f"JavaScript execution timed out after {timeout}s, recreating pool")
+        except mp.TimeoutError as err:
+            log.error(
+                f"JavaScript execution timed out after {timeout}s, recreating pool"
+            )
 
             # Terminate the pool to kill a hung worker
             if self._process_pool is not None:
                 self._process_pool.terminate()
                 self._process_pool = None
 
-            raise TimeoutError(f"JavaScript execution timed out after {timeout}s")
+            raise TimeoutError(
+                f"JavaScript execution timed out after {timeout}s"
+            ) from err
 
     def shutdown(self):
         """

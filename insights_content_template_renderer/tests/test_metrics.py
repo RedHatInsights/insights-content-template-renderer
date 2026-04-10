@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 
 from insights_content_template_renderer.endpoints import app
 
+
 class TestMetricsEndpoint:  # pylint: disable=too-few-public-methods
     """Check the /metrics endpoint expose some metrics."""
 
