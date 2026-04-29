@@ -9,16 +9,17 @@ COPY . $HOME
 
 ENV PATH="$VENV/bin:$PATH"
 
-RUN microdnf install --nodocs --noplugins -y python3.11 npm && \
+RUN microdnf install --nodocs --noplugins -y python3.11 git-core npm && \
     python3.11 -m venv $VENV && \
-    pip install --verbose --no-cache-dir -r requirements.txt
-
+    pip install --no-cache-dir -U pip && \
+    pip install --no-cache-dir .
 
 # Clean up not necessary packages if useful
-RUN pip uninstall -y py #https://pypi.org/project/py/
+RUN pip uninstall -y py pip
 
-RUN microdnf clean all
-RUN rpm -e --nodeps sqlite-libs krb5-libs libxml2 readline
+RUN microdnf remove -y git-core && \
+    microdnf clean all && \
+    rpm -e --nodeps sqlite-libs krb5-libs libxml2 readline
 
 USER 1001
 
