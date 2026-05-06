@@ -24,7 +24,7 @@ dependencies = [
     "dot-js-py==2.0.0",
     "fastapi==0.136.1",
     "prometheus_fastapi_instrumentator==7.1.0",
-    "pydantic==2.13.3",
+    "pydantic==2.13.4",
     "python-json-logger==4.1.0",
     "pythonmonkey==1.3.1",
     "sentry_sdk==2.59.0",
