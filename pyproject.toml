@@ -23,7 +23,7 @@ dependencies = [
     "boto3==1.43.36",
     "dot-js-py==2.0.0",
     "fastapi==0.138.0",
-    "prometheus_fastapi_instrumentator==8.0.1",
+    "prometheus_fastapi_instrumentator==8.0.2",
     "pydantic==2.13.4",
     "python-json-logger==4.1.0",
     "pythonmonkey==1.3.2",
