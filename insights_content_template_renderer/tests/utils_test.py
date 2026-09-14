@@ -6,8 +6,9 @@ import pydantic
 import pytest
 import pythonmonkey as pm
 
-from insights_content_template_renderer import utils
+from insights_content_template_renderer import dot, utils
 from insights_content_template_renderer.data import request_data_example
+from insights_content_template_renderer.js_executor import _eval_js_worker_task
 from insights_content_template_renderer.models import (
     Content,
     RenderedReport,
@@ -283,3 +284,41 @@ def test_array_includes_es7_support():
 
     # Verify that includes() worked and the condition was true
     assert "Namespace found" in rendered
+
+
+def test_env_var_leak_via_template_injection(monkeypatch):
+    """
+    Security regression test for the PythonMonkey environment-variable leak.
+
+    An attacker who controls DoT template text (supplied via the request body on
+    /v1/rendered_reports) can inject a DoT interpolation directive that reaches the
+    PythonMonkey `python` bridge and reads the container's environment variables.
+
+    This test injects a known secret into the process environment, compiles a
+    malicious template exactly the way utils.get_template_function does, runs it
+    through the real JS worker, and asserts the secret is NOT returned.
+
+    It FAILS while the `python` bridge is exposed to template JS (the vulnerability)
+    and PASSES once the bridge is removed before executing untrusted template code.
+    """
+    secret = "s3cr3t-value-12345"
+    monkeypatch.setenv("LEAKED_SECRET", secret)
+
+    # Direct exploit against the JS worker: a function that leaks the env var.
+    js_code = '(function(pydata){ return python.getenv("LEAKED_SECRET"); })'
+    _, result = _eval_js_worker_task(js_code, {})
+    assert secret not in result, (
+        f"Environment variable leaked directly via python bridge: {result!r}"
+    )
+
+    # Full endpoint path: a malicious DoT template compiled like the renderer does.
+    malicious_template = "Leaked: {{= python.getenv('LEAKED_SECRET') }}"
+    renderer = dot.Renderer()
+    escaped = utils.escape_new_line_inside_brackets(
+        utils.escape_raw_text_for_js(malicious_template)
+    )
+    wrapped_js = "(" + renderer.template(escaped, dot.DEFAULT_TEMPLATE_SETTINGS) + ")"
+    _, result = _eval_js_worker_task(wrapped_js, {})
+    assert secret not in result, (
+        f"Environment variable leaked via injected DoT template: {result!r}"
+    )
