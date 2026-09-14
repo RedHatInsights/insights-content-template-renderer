@@ -12,6 +12,15 @@ from functools import cache
 
 log = logging.getLogger(__name__)
 
+# JavaScript that removes the PythonMonkey -> Python bridge from the global
+# scope. Template source is attacker-controllable (supplied via the request
+# body on /v1/rendered_reports) and compiled straight into the JS we eval, so
+# leaving `python` (python.eval / python.exec / python.getenv) or `require`
+# reachable would let an injected DoT directive read os.environ or execute
+# arbitrary Python inside the container. Templates only ever need the `pydata`
+# argument and standard JS, so severing the bridge is safe.
+_DISABLE_PYTHON_BRIDGE_JS = "delete globalThis.python; delete globalThis.require;"
+
 
 def _eval_js_worker_task(js_code, data):
     """
@@ -25,6 +34,12 @@ def _eval_js_worker_task(js_code, data):
     try:
         import pythonmonkey as pm
         from pythonmonkey import SpiderMonkeyError
+
+        # Sever the JS -> Python bridge before evaluating untrusted template
+        # code. The deletion persists for the lifetime of the worker's
+        # SpiderMonkey global, but we run it on every task so the guarantee
+        # never depends on prior worker state.
+        pm.eval(_DISABLE_PYTHON_BRIDGE_JS)
 
         func = pm.eval(js_code)
         result = func(data)
