@@ -22,7 +22,7 @@ requires-python = ">= 3.11"
 dependencies = [
     "boto3==1.43.114",
     "dot-js-py==2.0.0",
-    "fastapi==0.143.1",
+    "fastapi==0.143.2",
     "prometheus_fastapi_instrumentator==8.1.0",
     "pydantic==2.14.1",
     "python-json-logger==4.2.0",
