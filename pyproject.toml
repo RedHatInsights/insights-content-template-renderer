@@ -20,14 +20,14 @@ classifiers = [
 
 requires-python = ">= 3.11"
 dependencies = [
-    "boto3==1.43.117",
+    "boto3==1.43.118",
     "dot-js-py==2.0.0",
-    "fastapi==0.159.1",
+    "fastapi==0.161.1",
     "prometheus_fastapi_instrumentator==8.1.0",
     "pydantic==2.14.1",
     "python-json-logger==4.2.0",
     "pythonmonkey==1.4.1",
-    "sentry_sdk==2.72.0",
+    "sentry_sdk==2.73.0",
     "uvicorn[standard]==0.54.0",
     "watchtower==3.4.0"
 ]
