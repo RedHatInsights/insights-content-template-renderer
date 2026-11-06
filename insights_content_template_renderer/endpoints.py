@@ -10,9 +10,18 @@ from fastapi.responses import PlainTextResponse
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from insights_content_template_renderer.js_executor import shutdown_js_executor
-from insights_content_template_renderer.models import RendererRequest, RendererResponse
+from insights_content_template_renderer.models import (
+    RendererRequest,
+    RendererResponse,
+    RenderItemsRequest,
+    RenderItemsResponse,
+)
 from insights_content_template_renderer.sentry import init_sentry
-from insights_content_template_renderer.utils import RenderingError, render_reports
+from insights_content_template_renderer.utils import (
+    RenderingError,
+    render_items,
+    render_reports,
+)
 
 app = FastAPI()
 log = logging.getLogger(__name__)
@@ -63,3 +72,20 @@ async def rendered_reports(data: RendererRequest):
         log.exception(error)
         # Re-raise so Sentry can capture it with the request_data
         raise error from exc
+
+
+@app.post("/v2/rendered_reports", response_model=RenderItemsResponse)
+async def rendered_reports_v2(data: RenderItemsRequest) -> RenderItemsResponse:
+    """
+    Endpoint for batch rendering of DoT.js template fields.
+
+    Each item contains a map of template fields and the data (pydata) to
+    render them with. Fields that fail to render are reported in the item's
+    errors map; the response preserves the request's item order.
+
+    :param data: request containing JSON body with required data
+    :return: JSON with rendered items
+    """
+    log.info("Received request for /v2/rendered_reports")
+    log.debug("Rendering items")
+    return render_items(data)

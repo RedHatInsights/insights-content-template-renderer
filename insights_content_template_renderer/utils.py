@@ -10,9 +10,13 @@ from insights_content_template_renderer.dot import DEFAULT_TEMPLATE_SETTINGS
 from insights_content_template_renderer.js_executor import get_js_executor
 from insights_content_template_renderer.models import (
     Content,
+    RenderedItem,
     RenderedReport,
     RendererRequest,
     RendererResponse,
+    RenderItem,
+    RenderItemsRequest,
+    RenderItemsResponse,
     Report,
 )
 
@@ -268,3 +272,76 @@ def render_reports(request_data: RendererRequest) -> RendererResponse:
     log.info("The reports from the request have been processed")
 
     return result
+
+
+def _concise_error_message(exception: Exception) -> str:
+    """
+    Extract a concise error message from a template rendering exception.
+
+    Worker exceptions can carry Python tracebacks and SpiderMonkey stack
+    traces; those are internal details and must not leak into API responses.
+    The last informative line before any stack trace is the JS error line
+    (e.g. ``TypeError: pydata.foo is not a function``).
+
+    :param exception: exception raised during template rendering
+    :return: concise error message without stack traces
+    """
+    message = str(exception)
+    for separator in ("Stack Trace:", "Traceback ("):
+        message = message.split(separator)[0]
+    lines = [line.strip() for line in message.strip().splitlines() if line.strip()]
+    return lines[-1] if lines else "template rendering failed"
+
+
+def render_item_fields(item: RenderItem) -> RenderedItem:
+    """
+    Renders all template fields of a single item with its data.
+
+    :param item: item with template fields and data (pydata)
+    :return: rendered fields and per-field error messages; fields that fail
+        to render are not included in the rendered dict and keep their
+        error message in the errors dict
+    """
+    rendered: dict[str, str] = {}
+    errors: dict[str, str] = {}
+
+    for field_name, template_text in item.templates.items():
+        if template_text is None or template_text == "":
+            # empty fields are not templates, skip them
+            continue
+
+        try:
+            template_text_no_newline_inside_brackets = escape_new_line_inside_brackets(
+                escape_raw_text_for_js(template_text)
+            )
+            js_code = renderer.template(
+                template_text_no_newline_inside_brackets, DoT_settings
+            )
+            wrapped_js_code = f"({js_code})"
+
+            executor = get_js_executor()
+            result = executor.execute(wrapped_js_code, item.data, timeout=5)
+            rendered[field_name] = unescape_raw_text_for_python(result)
+        except Exception as exception:  # pylint: disable=broad-except
+            log.debug(
+                "The template for field '%s' could not be rendered: %s",
+                field_name,
+                exception,
+            )
+            errors[field_name] = (
+                f"Failed to render template: {_concise_error_message(exception)}"
+            )
+
+    return RenderedItem(rendered=rendered, errors=errors)
+
+
+def render_items(request_data: RenderItemsRequest) -> RenderItemsResponse:
+    """
+    Renders all items of the batch request.
+
+    :param request_data: request containing JSON body with required data
+    :return: rendered items in the same order as the request
+    """
+    return RenderItemsResponse(
+        items=[render_item_fields(item) for item in request_data.items]
+    )
