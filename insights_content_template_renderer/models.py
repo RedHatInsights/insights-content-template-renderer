@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel
 
 from insights_content_template_renderer.data import (
@@ -94,3 +96,75 @@ class RendererResponse(BaseModel):
 
     class Config:
         schema_extra = {"example": response_data_example}
+
+
+class RenderItem(BaseModel):
+    """A single recommendation whose template fields should be rendered."""
+
+    template: dict[str, str]
+    data: dict[str, Any]
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "template": {
+                    "reason": "Test workload {{=pydata.name}} has a finding",
+                    "resolution": "Apply the test resolution to {{=pydata.name}}",
+                },
+                "data": {"name": "my-app"},
+            }
+        }
+
+
+class RenderItemsRequest(BaseModel):
+    """Batch request for rendering DoT.js template fields."""
+
+    items: list[RenderItem]
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "items": [
+                    {
+                        "template": {
+                            "reason": "Test workload {{=pydata.name}} has a finding",
+                            "resolution": "Apply the test resolution to {{=pydata.name}}",
+                        },
+                        "data": {"name": "my-app"},
+                    }
+                ]
+            }
+        }
+
+
+class RenderedItem(BaseModel):
+    """Result of rendering a single recommendation's template fields."""
+
+    rendered: dict[str, str]
+    errors: dict[str, str]
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "rendered": {"reason": "Test workload my-app has a finding"},
+                "errors": {"resolution": "Failed to execute DoT.js template"},
+            }
+        }
+
+
+class RenderItemsResponse(BaseModel):
+    """Batch response with rendered template fields."""
+
+    items: list[RenderedItem]
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "items": [
+                    {
+                        "rendered": {"reason": "Test workload my-app has a finding"},
+                        "errors": {"resolution": "Failed to execute DoT.js template"},
+                    }
+                ]
+            }
+        }
