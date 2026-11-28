@@ -20,7 +20,7 @@ classifiers = [
 
 requires-python = ">= 3.11"
 dependencies = [
-    "boto3==1.44.10",
+    "boto3==1.44.11",
     "dot-js-py==2.0.0",
     "fastapi==0.165.0",
     "prometheus_fastapi_instrumentator==8.1.0",
